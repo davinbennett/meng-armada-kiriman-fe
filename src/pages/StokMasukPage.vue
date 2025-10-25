@@ -127,6 +127,7 @@ const filteredKiriman = ref([])
 const filterDate = ref('')
 const searchTerm = ref('')
 const role = ref('')
+const username = ref('')
 const search = ref("")
 
 // FORM STATE
@@ -155,11 +156,14 @@ onMounted(async () => {
 
     const { data: userData } = await supabase
         .from('users')
-        .select('role')
+        .select('username, role')
         .eq('auth_user_id', currentUserId)
-        .single()
+        .single()  
 
     role.value = userData?.role || 'Unknown'
+    username.value = userData?.username || 'Unknown'
+    
+    
     await loadArmadas()
     await loadKiriman()
 })
@@ -246,6 +250,15 @@ function formatDate(dt) {
     return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')} | ${d.getDate().toString().padStart(2, '0')}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getFullYear()}`
 }
 
+async function printKiriman(payload) {
+    return await fetch(`${import.meta.env.VITE_API_URL}/print-struk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+}
+
+
 // ADD KIRIMAN
 async function addKiriman() {
     if (!selectedNopol.value || !supplier.value) {
@@ -272,13 +285,49 @@ async function addKiriman() {
         plus: plus.value,
         volume: volume,
         total_print: 1, // langsung 1 karena akan di-print
-    })
+    }).select()
 
     if (error) {
         errorMsg.value = "Gagal menyimpan kiriman"
         setTimeout(() => errorMsg.value = '', 2000)
         return
     }
+
+    const row = data[0]
+
+    // =========== PANGGIL PRINT ===========
+    const res = await printKiriman({
+        kirimanId: row.id,
+        nopol: arm.nopol,
+        kirimanDate: formatDate(row.created_at),
+        username: username.value,
+        supplier: supplier.value,
+        panjang: arm.panjang,
+        lebar: arm.lebar,
+        tinggi: arm.tinggi,
+        plus: plus.value,
+        volume: volume,
+    })
+
+
+    if (!res) {
+        await supabase.from('kiriman').delete().eq('id', row.id) // rollback
+        errorMsg.value = "Gagal memanggil service print — rollback"
+        setTimeout(() => errorMsg.value = '', 2000)
+        return
+    }
+
+    const dataa = await res.json()
+
+    if (!res.ok) {
+        await supabase.from('kiriman').delete().eq('id', row.id) // rollback
+        errorMsg.value = "Hubungkan printer ke perangkat"
+        setTimeout(() => errorMsg.value = '', 2000)
+        return
+    }
+
+
+    // ====================================
 
     // Insert ke records
     await supabase.from('records').insert({
@@ -287,7 +336,7 @@ async function addKiriman() {
         type: 2,        // KIRIMAN
     })
 
-    successMsg.value = "Berhasil disimpan"
+    successMsg.value = "Berhasil disimpan dan print"
     setTimeout(() => successMsg.value = '', 2000)
 
     // Reset form
@@ -323,17 +372,58 @@ async function deleteKiriman(id) {
 
 // PRINT PER ROW
 async function printRow(row) {
-    const doc = new jsPDF()
-    doc.text(`Kiriman Nopol: ${row.nopol}`, 10, 10)
-    doc.text(`Supplier: ${row.supplier}`, 10, 20)
-    doc.text(`P: ${row.panjang} | L: ${row.lebar} | T: ${row.tinggi} | Plus: ${row.plus}`, 10, 30)
-    doc.text(`Volume: ${row.volume}`, 10, 40)
-    doc.save(`kiriman_${row.nopol}.pdf`)
+    // const doc = new jsPDF()
+    // let y = 10  // posisi awal Y
+
+    // doc.setFontSize(12)
+    // doc.text(`Kiriman ID     : ${row.id}`, 10, y); y += 8
+    // doc.text(`Tanggal        : ${formatDate(row.created_at)}`, 10, y); y += 8
+    // doc.text(`Username       : ${username.value}`, 10, y); y += 8
+    // doc.text(`Nopol Armada   : ${row.armada.nopol}`, 10, y); y += 8
+    // doc.text(`Supplier       : ${row.supplier}`, 10, y); y += 8
+    // doc.text(`Dimensi (cm)   : P ${row.armada.panjang} | L ${row.armada.lebar} | T ${row.armada.tinggi} | +${row.plus}`, 10, y); y += 8
+    // doc.text(`Volume (m3)    : ${row.volume}`, 10, y); y += 8
+
+    // doc.save(`kiriman_${row.armada.nopol}.pdf`)
+
+
+    // =========== PANGGIL PRINT ===========
+    const res = await printKiriman({
+        kirimanId: row.id,
+        nopol: row.armada.nopol,
+        kirimanDate: formatDate(row.created_at),
+        username: username.value,
+        supplier: row.supplier,
+        panjang: row.armada.panjang,
+        lebar: row.armada.lebar,
+        tinggi: row.armada.tinggi,
+        plus: row.plus,
+        volume: row.volume,
+    })
+
+    if (!res) {
+        errorMsg.value = "Gagal memanggil service print — rollback"
+        setTimeout(() => errorMsg.value = '', 2000)  
+        return
+    }
+
+    const dataa = await res.json()
+
+    if (!res.ok) {
+        errorMsg.value = "Hubungkan printer ke perangkat"
+        setTimeout(() => errorMsg.value = '', 2000)  
+        return
+    }
+
+    // ====================================
 
     // Increment total print
-    await supabase.from('stok_masuk').update({
+    await supabase.from('kiriman').update({
         total_print: row.total_print + 1
     }).eq('id', row.id)
+
+    successMsg.value = "Berhasil print"
+    setTimeout(() => successMsg.value = '', 2000)
 
     await loadKiriman()
 }
