@@ -26,10 +26,8 @@
                 <form @submit.prevent="addKiriman" class="form-stok">
                     <div class="form-group">
                         <label>Nopol</label>
-                        <select v-model="selectedNopol" required>
-                            <option value="" disabled>Pilih Nopol</option>
-                            <option v-for="a in armadas" :key="a.id" :value="a.id">{{ a.nopol }}</option>
-                        </select>
+                        <v-select v-model="selectedNopol" :options="filteredArmadas" label="nopol" :reduce="a => a.id"
+                            @search="val => search = val" placeholder="Pilih / Cari Nopol" />
                     </div>
 
                     <div class="form-group">
@@ -81,7 +79,8 @@
                             <td>
                                 <div class="action-buttons">
                                     <button @click="printRow(k)">Print</button>
-                                    <button v-if="role === 'ADMIN' || role === 'OPERATOR'" class="delete-btn" @click="deleteKiriman(k.id)">Hapus</button>
+                                    <button v-if="role === 'ADMIN' || role === 'OPERATOR'" class="delete-btn"
+                                        @click="deleteKiriman(k.id)">Hapus</button>
                                 </div>
                             </td>
 
@@ -128,6 +127,7 @@ const filteredKiriman = ref([])
 const filterDate = ref('')
 const searchTerm = ref('')
 const role = ref('')
+const search = ref("")
 
 // FORM STATE
 const selectedNopol = ref('')
@@ -137,6 +137,15 @@ const supplier = ref('')
 // TOAST
 const errorMsg = ref('')
 const successMsg = ref('')
+
+const filteredArmadas = computed(() => {
+    // filter berdasarkan input search
+    const f = armadas.value.filter(a =>
+        a.nopol.toLowerCase().includes(search.value.toLowerCase())
+    )
+    // limit 10 hasil pertama
+    return f.slice(0, 10)
+})
 
 // USER ID (ambil dari session supabase)
 let currentUserId = null
@@ -215,7 +224,6 @@ watch(filterDate, () => {
 
 
 // FILTER TABLE
-
 function filterTable() {
     if (!searchTerm.value) {
         filteredKiriman.value = kiriman.value

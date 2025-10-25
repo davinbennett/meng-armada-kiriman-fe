@@ -28,9 +28,7 @@
                     <input type="number" v-model.number="tinggi" placeholder="Tinggi" min="0" step="1" />
                 </div>
 
-
-
-                <button type="submit">Tambah Armada</button>
+                <button v-if="role === 'ADMIN' || role === 'OPERATOR'" type="submit">Tambah Armada</button>
             </form>
 
             <div class="table-wrapper">
