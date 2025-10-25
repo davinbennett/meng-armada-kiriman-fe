@@ -37,9 +37,9 @@ export function generate58mmPdf(payload) {
     doc.setFont(undefined, "bold");
     doc.text("Tentrem Perkasa", 58 / 2, y+4, { align: "center" });
     y += lineHeight;
-    doc.setFontSize(8);
+    doc.setFontSize(10);
     doc.setFont(undefined, "normal");
-    doc.text("-----------------------------------------------------", left, y+4);
+    doc.text("-------------------------------------------", left, y+4);
     y += lineHeight+4;
 
     // helper to print fixed-label + right-aligned value in fixed columns
@@ -66,7 +66,7 @@ export function generate58mmPdf(payload) {
     printLabelValue("Operator", payload.username);
     printLabelValue("Supplier", payload.supplier);
     y += 0;
-    doc.text("-----------------------------------------------------", left, y);
+    doc.text("-------------------------------------------", left, y);
     y += lineHeight;
     
     printLabelValue("Panjang", `${payload.panjang} cm`);
@@ -75,7 +75,7 @@ export function generate58mmPdf(payload) {
     printLabelValue("Plus", `${payload.plus} cm`);
     printLabelValue("Volume", `${Number(payload.volume).toFixed(2)} m³`);
 
-    doc.text("-----------------------------------------------------", left, y+1);
+    doc.text("-------------------------------------------", left, y+1);
 
     const blob = doc.output("blob");
 
