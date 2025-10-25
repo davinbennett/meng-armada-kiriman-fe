@@ -197,9 +197,18 @@ async function loadKiriman() {
         .order('created_at', { ascending: false })
 
     if (filterDate.value) {
-        const start = `${filterDate.value}T00:00:00Z`
-        const end = `${filterDate.value}T23:59:59Z`
-        query = query.gte('created_at', start).lte('created_at', end)
+        const date = new Date(filterDate.value) // misal "2025-10-26"
+
+        const start = new Date(date)
+        start.setHours(0 + 0, 0, 0, 0) 
+        const end = new Date(date)
+        end.setHours(23 + 0, 59, 59, 999) 
+
+        console.log(start.toISOString()) // ini UTC+0 tapi sudah dikompensasi +7 jam
+        console.log(end.toISOString())
+
+        query = query.gte('created_at', start.toISOString())
+            .lte('created_at', end.toISOString())
     }
 
     const { data, error } = await query
