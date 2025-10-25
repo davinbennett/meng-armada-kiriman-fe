@@ -21,7 +21,7 @@ export function generate58mmPdf(payload) {
     const doc = new jsPDF({
         orientation: "portrait",
         unit: "mm",
-        format: [58, 200] // width 58mm, height flexible (200mm arbitrary) 
+        format: [58, 75] // width 58mm, height flexible (200mm arbitrary) 
     });
 
     // margins and line spacing
@@ -39,7 +39,7 @@ export function generate58mmPdf(payload) {
     y += lineHeight;
     doc.setFontSize(8);
     doc.setFont(undefined, "normal");
-    doc.text("--------------------------------", left, y);
+    doc.text("-----------------------------------------------------", left, y);
     y += lineHeight;
 
     // helper to print fixed-label + right-aligned value in fixed columns
@@ -66,24 +66,21 @@ export function generate58mmPdf(payload) {
     printLabelValue("Operator", payload.username);
     printLabelValue("Supplier", payload.supplier);
     y += 0;
-    doc.text("--------------------------------", left, y);
+    doc.text("-----------------------------------------------------", left, y);
     y += lineHeight;
+    
+    printLabelValue("Panjang", `${payload.panjang} cm`);
+    printLabelValue("Lebar", `${payload.lebar} cm`);
+    printLabelValue("Tinggi", `${payload.tinggi} cm`);
+    printLabelValue("Plus", `${payload.plus} cm`);
+    printLabelValue("Volume", `${Number(payload.volume).toFixed(2)} m³`);
 
-    printLabelValue("Panjang", `${payload.panjang}`);
-    printLabelValue("Lebar", `${payload.lebar}`);
-    printLabelValue("Tinggi", `${payload.tinggi}`);
-    printLabelValue("Plus", `${payload.plus}`);
-    printLabelValue("Volume", `${Number(payload.volume).toFixed(2)} m3`);
-
-    y += lineHeight;
-    doc.text("--------------------------------", left, y);
-    y += lineHeight;
-
-    // crop page to used height (optional)
-    const usedHeight = y + 6;
-    doc.internal.pageSize.setHeight(usedHeight);
+    doc.text("-----------------------------------------------------", left, y);
 
     const blob = doc.output("blob");
+
+    console.log(payload.nopol);
+    doc.save(`kiriman_${payload.nopol}_${payload.kirimanDate}.pdf`)
     return blob;
 }
 

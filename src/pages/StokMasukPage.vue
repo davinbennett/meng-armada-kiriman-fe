@@ -310,26 +310,6 @@ async function addKiriman() {
         volume: volume,
     }
 
-    // If Android, try WebBluetooth ESC/POS first
-    if (isAndroid()) {
-        try {
-            const conn = await connectToBluetoothPrinter()
-
-            const bytes = escposBuildLines(payload)
-            await sendToBluetooth(conn.characteristic, bytes)
-            // disconnect
-            try { conn.server.disconnect() } catch (e) { }
-
-
-            return
-        } catch (err) {
-            await supabase.from('kiriman').delete().eq('id', row.id) // rollback
-            errorMsg.value = 'Gagal print via Bluetooth'
-            setTimeout(() => errorMsg.value = '', 2000)
-            // fallthrough to PDF share
-        }
-    }
-
     // Generate PDF (all devices)
     try {
         const blob = generate58mmPdf(payload)
@@ -419,26 +399,6 @@ async function printRow(row) {
         tinggi: row.armada.tinggi,
         plus: row.plus,
         volume: row.volume,
-    }
-
-    // If Android, try WebBluetooth ESC/POS first
-    if (isAndroid()) {
-        try {
-            const conn = await connectToBluetoothPrinter()
-
-            const bytes = escposBuildLines(payload)
-            await sendToBluetooth(conn.characteristic, bytes)
-            // disconnect
-            try { conn.server.disconnect() } catch (e) { }
-
-
-            return
-        } catch (err) {
-            await supabase.from('kiriman').delete().eq('id', row.id) // rollback
-            errorMsg.value = 'Gagal print via Bluetooth'
-            setTimeout(() => errorMsg.value = '', 2000)
-            // fallthrough to PDF share
-        }
     }
 
     // Generate PDF (all devices)
