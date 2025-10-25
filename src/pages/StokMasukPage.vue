@@ -40,7 +40,7 @@
                         <input type="text" v-model="supplier" required />
                     </div>
 
-                    <button type="submit">Simpan & Print</button>
+                    <button type="submit">Simpan</button>
                 </form>
             </div>
 
@@ -294,41 +294,6 @@ async function addKiriman() {
         return
     }
 
-    const row = data[0]
-
-    // =========== PANGGIL PRINT ===========
-    const payload = {
-        kirimanId: row.id,
-        nopol: arm.nopol,
-        kirimanDate: formatDate(row.created_at),
-        username: username.value,
-        supplier: supplier.value,
-        panjang: arm.panjang,
-        lebar: arm.lebar,
-        tinggi: arm.tinggi,
-        plus: plus.value,
-        volume: volume,
-    }
-
-    // Generate PDF (all devices)
-    try {
-        const blob = generate58mmPdf(payload)
-        const file = new File([blob], `kiriman_${payload.nopol}.pdf`, { type: "application/pdf" })
-
-        // prefer share on mobile if available
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ title: 'Struk Kiriman', text: 'Silakan pilih aplikasi printer', files: [file] })
-        } else {
-            // fallback: open preview in new tab
-            const url = URL.createObjectURL(blob)
-            window.open(url, '_blank')
-        }
-    } catch (err) {
-        await supabase.from('kiriman').delete().eq('id', row.id) // rollback
-        errorMsg.value = 'Gagal generate/preview PDF: '
-        setTimeout(() => errorMsg.value = '', 2000)
-    }
-
     // Insert ke records
     await supabase.from('records').insert({
         created_by: currentUserId,
@@ -336,7 +301,7 @@ async function addKiriman() {
         type: 2,        // KIRIMAN
     })
 
-    successMsg.value = "Berhasil disimpan dan print"
+    successMsg.value = "Berhasil disimpan"
     setTimeout(() => successMsg.value = '', 2000)
 
     // Reset form
