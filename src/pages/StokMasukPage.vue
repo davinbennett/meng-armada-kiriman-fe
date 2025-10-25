@@ -104,6 +104,7 @@ import { supabase } from '../supabaseClient'
 import { jsPDF } from "jspdf" // npm install jspdf
 import { saveAs } from 'file-saver'
 import * as XLSX from 'xlsx'
+import { isAndroid, generate58mmPdf, escposBuildLines, connectToBluetoothPrinter, sendToBluetooth } from '@/utils/printer'
 
 const stokTable = ref(null)
 
@@ -296,7 +297,7 @@ async function addKiriman() {
     const row = data[0]
 
     // =========== PANGGIL PRINT ===========
-    const res = await printKiriman({
+    const payload = {
         kirimanId: row.id,
         nopol: arm.nopol,
         kirimanDate: formatDate(row.created_at),
@@ -307,27 +308,46 @@ async function addKiriman() {
         tinggi: arm.tinggi,
         plus: plus.value,
         volume: volume,
-    })
-
-
-    if (!res) {
-        await supabase.from('kiriman').delete().eq('id', row.id) // rollback
-        errorMsg.value = "Gagal memanggil service print — rollback"
-        setTimeout(() => errorMsg.value = '', 2000)
-        return
     }
 
-    const dataa = await res.json()
+    // If Android, try WebBluetooth ESC/POS first
+    if (isAndroid()) {
+        try {
+            const conn = await connectToBluetoothPrinter()
 
-    if (!res.ok) {
-        await supabase.from('kiriman').delete().eq('id', row.id) // rollback
-        errorMsg.value = "Hubungkan printer ke perangkat"
-        setTimeout(() => errorMsg.value = '', 2000)
-        return
+            const bytes = escposBuildLines(payload)
+            await sendToBluetooth(conn.characteristic, bytes)
+            // disconnect
+            try { conn.server.disconnect() } catch (e) { }
+
+
+            return
+        } catch (err) {
+            await supabase.from('kiriman').delete().eq('id', row.id) // rollback
+            errorMsg.value = 'Gagal print via Bluetooth'
+            setTimeout(() => errorMsg.value = '', 2000)
+            // fallthrough to PDF share
+        }
     }
 
+    // Generate PDF (all devices)
+    try {
+        const blob = generate58mmPdf(payload)
+        const file = new File([blob], `kiriman_${payload.nopol}.pdf`, { type: "application/pdf" })
 
-    // ====================================
+        // prefer share on mobile if available
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ title: 'Struk Kiriman', text: 'Silakan pilih aplikasi printer', files: [file] })
+        } else {
+            // fallback: open preview in new tab
+            const url = URL.createObjectURL(blob)
+            window.open(url, '_blank')
+        }
+    } catch (err) {
+        await supabase.from('kiriman').delete().eq('id', row.id) // rollback
+        errorMsg.value = 'Gagal generate/preview PDF: '
+        setTimeout(() => errorMsg.value = '', 2000)
+    }
 
     // Insert ke records
     await supabase.from('records').insert({
@@ -388,7 +408,7 @@ async function printRow(row) {
 
 
     // =========== PANGGIL PRINT ===========
-    const res = await printKiriman({
+    const payload = {
         kirimanId: row.id,
         nopol: row.armada.nopol,
         kirimanDate: formatDate(row.created_at),
@@ -399,20 +419,45 @@ async function printRow(row) {
         tinggi: row.armada.tinggi,
         plus: row.plus,
         volume: row.volume,
-    })
-
-    if (!res) {
-        errorMsg.value = "Gagal memanggil service print — rollback"
-        setTimeout(() => errorMsg.value = '', 2000)  
-        return
     }
 
-    const dataa = await res.json()
+    // If Android, try WebBluetooth ESC/POS first
+    if (isAndroid()) {
+        try {
+            const conn = await connectToBluetoothPrinter()
 
-    if (!res.ok) {
-        errorMsg.value = "Hubungkan printer ke perangkat"
-        setTimeout(() => errorMsg.value = '', 2000)  
-        return
+            const bytes = escposBuildLines(payload)
+            await sendToBluetooth(conn.characteristic, bytes)
+            // disconnect
+            try { conn.server.disconnect() } catch (e) { }
+
+
+            return
+        } catch (err) {
+            await supabase.from('kiriman').delete().eq('id', row.id) // rollback
+            errorMsg.value = 'Gagal print via Bluetooth'
+            setTimeout(() => errorMsg.value = '', 2000)
+            // fallthrough to PDF share
+        }
+    }
+
+    // Generate PDF (all devices)
+    try {
+        const blob = generate58mmPdf(payload)
+        const file = new File([blob], `kiriman_${payload.nopol}.pdf`, { type: "application/pdf" })
+
+        // prefer share on mobile if available
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ title: 'Struk Kiriman', text: 'Silakan pilih aplikasi printer', files: [file] })
+        } else {
+            // fallback: open preview in new tab
+            const url = URL.createObjectURL(blob)
+            window.open(url, '_blank')
+        }
+    } catch (err) {
+        await supabase.from('kiriman').delete().eq('id', row.id) // rollback
+        errorMsg.value = 'Gagal generate/preview PDF: '
+        setTimeout(() => errorMsg.value = '', 2000)
     }
 
     // ====================================
