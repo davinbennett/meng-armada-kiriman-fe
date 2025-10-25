@@ -60,6 +60,7 @@ const successMsg = ref('')
 const page = ref(1)
 const limit = 20
 const role = ref('')
+import { supabase } from '../supabaseClient'
 
 let isAlive = true
 
