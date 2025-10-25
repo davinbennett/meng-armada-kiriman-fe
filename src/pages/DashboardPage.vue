@@ -15,7 +15,7 @@
                         <p>{{ totalVolume.toFixed(2) }} m³</p>
                     </div>
                     <div class="card">
-                        <h3>Total Ritase</h3>
+                        <h3>Total Armada</h3>
                         <p>{{ totalRitase }}</p>
                     </div>
                     <div class="card">
