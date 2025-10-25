@@ -21,7 +21,7 @@ export function generate58mmPdf(payload) {
     const doc = new jsPDF({
         orientation: "portrait",
         unit: "mm",
-        format: [58, 75] // width 58mm, height flexible (200mm arbitrary) 
+        format: [58, 83] // width 58mm, height flexible (200mm arbitrary) 
     });
 
     // margins and line spacing
@@ -35,12 +35,12 @@ export function generate58mmPdf(payload) {
     // center title
     doc.setFontSize(11);
     doc.setFont(undefined, "bold");
-    doc.text("Tentrem Perkasa", 58 / 2, y, { align: "center" });
+    doc.text("Tentrem Perkasa", 58 / 2, y+4, { align: "center" });
     y += lineHeight;
     doc.setFontSize(8);
     doc.setFont(undefined, "normal");
-    doc.text("-----------------------------------------------------", left, y);
-    y += lineHeight;
+    doc.text("-----------------------------------------------------", left, y+4);
+    y += lineHeight+4;
 
     // helper to print fixed-label + right-aligned value in fixed columns
     function printLabelValue(label, value) {
@@ -75,12 +75,11 @@ export function generate58mmPdf(payload) {
     printLabelValue("Plus", `${payload.plus} cm`);
     printLabelValue("Volume", `${Number(payload.volume).toFixed(2)} m³`);
 
-    doc.text("-----------------------------------------------------", left, y);
+    doc.text("-----------------------------------------------------", left, y+1);
 
     const blob = doc.output("blob");
 
     console.log(payload.nopol);
-    doc.save(`kiriman_${payload.nopol}_${payload.kirimanDate}.pdf`)
     return blob;
 }
 
