@@ -124,7 +124,7 @@ async function addUser() {
     }
 
     try {
-        const res = await fetch('http://103.27.206.183/create-user', {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/create-user`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -174,7 +174,7 @@ async function deleteUser(userId) {
     if (!confirm('Yakin ingin menghapus user ini?')) return
 
     try {
-        const res = await fetch('http://103.27.206.183/delete-user', {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/delete-user`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId })
