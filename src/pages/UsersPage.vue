@@ -32,7 +32,7 @@
                                 <tr>
                                     <th>Username</th>
                                     <th>Role</th>
-                                    <th>Action</th>
+                                    <th v-if="role === 'ADMIN'">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -40,7 +40,7 @@
                                     <td>{{ u.username }}</td>
                                     <td>{{ u.role }}</td>
                                     <td>
-                                        <button class="delete-btn" @click="deleteUser(u.auth_user_id)">
+                                        <button class="delete-btn" @click="deleteUser(u.auth_user_id)" v-if="role === 'ADMIN'">
                                             Hapus
                                         </button>
                                     </td>
