@@ -44,14 +44,14 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="k in kirimanTerbaru" :key="k.id">
-                                <td>{{ k.armada.nopol }}</td>
+                            <tr v-for="k in (kirimanTerbaru || [])" :key="k.id">
+                                <td>{{ k.armada?.nopol }}</td>
                                 <td>{{ k.supplier }}</td>
-                                <td>{{ k.armada.panjang }}</td>
-                                <td>{{ k.armada.lebar }}</td>
-                                <td>{{ k.armada.tinggi }}</td>
+                                <td>{{ k.armada?.panjang }}</td>
+                                <td>{{ k.armada?.lebar }}</td>
+                                <td>{{ k.armada?.tinggi }}</td>
                                 <td>{{ k.plus }}</td>
-                                <td>{{ (k.volume).toFixed(2) }}</td>
+                                <td>{{ k.volume?.toFixed(2) ?? "-" }}</td>
                                 <td>{{ formatDate(k.created_at) }}</td>
                             </tr>
                         </tbody>
