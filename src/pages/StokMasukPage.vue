@@ -32,7 +32,7 @@
 
                     <div class="form-group">
                         <label>Plus (cm)</label>
-                        <input type="number" v-model.number="plus" min="0" />
+                        <input type="number" v-model.number="plus"/>
                     </div>
 
                     <div class="form-group">
